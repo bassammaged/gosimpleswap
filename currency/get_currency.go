@@ -1,68 +1,52 @@
 package currency
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
-	"net/http"
+	"github.com/bassammaged/gosimpleswap/platform"
 )
 
-const url = "https://api.simpleswap.io/get_currency"
-
-type UserData struct {
-	ApiKey string
-}
-
 type Currency struct {
-	Name             string `json:"name"`
-	Symbol           string `json:"symbol"`
-	Network          string `json:"network"`
-	Has_extra_id     bool   `json:"has_extra_id"`
-	Address_explorer string `json:"address_explorer"`
-	Extra_id         string `json:"extra_id"`
-	Image            string `json:"image"`
+	Name              string `json:"name"`
+	Symbol            string `json:"symbol"`
+	Network           string `json:"network"`
+	HasExtraId        bool   `json:"has_extra_id"`
+	ExtraId           string `json:"extra_id"`
+	Image             string `json:"image"`
+	WarningsFrom      string `json:"warnings_from"`
+	Warningsto        string `json:"warnings_to"`
+	ValidationAddress string `json:"validation_address"`
+	ValidationExtra   string `json:"validation_extra"`
+	AddressExplorer   string `json:"address_explorer"`
+	TxExplorer        string `json:"tx_explorer"`
+	ConfirmationsFrom string `json:"confirmations_from"`
 }
 
-func NewUserData(apiKey string) *UserData {
-	var userData UserData = UserData{
-		ApiKey: apiKey,
-	}
-	return &userData
-}
-
-func GetCurrency(currencySymbol string, userData *UserData) (*Currency, error) {
-	getUrl := url + "?symbol=" + currencySymbol + "&api_key=" + userData.ApiKey
-	response, err := http.Get(getUrl)
+// Return info about currency by provided symbol
+func (c *Currency) GetCurrency(currencySymbol string, user platform.User) (interface{}, error) {
+	// Prepare the URL
+	url := platform.URL + "/get_currency?symbol=" + currencySymbol + "&api_key=" + user.ApiKey
+	// Send the request
+	response, err := platform.SendGetRequest(url)
 	if err != nil {
-		return &Currency{}, err
+		return nil, err
 	}
 
-	if err = evaluateTheResponseCode(response); err != nil {
-		return &Currency{}, err
-	}
-
-	currency, err := getResponseBody(*response)
+	statusCode, err := platform.CheckResponseCode(response)
 	if err != nil {
-		return &Currency{}, err
+		if statusCode >= 400 && statusCode < 500 {
+			var object platform.FourHundredStatusCode
+			resultObject, err := platform.GetResponseBody(&object, response)
+			if err != nil {
+				return nil, err
+			}
+			return resultObject, nil
+		} else {
+			return nil, err
+		}
 	}
-
-	return currency, nil
-}
-
-func evaluateTheResponseCode(response *http.Response) error {
-	if response.StatusCode != 200 {
-		return errors.New("status code is not equal to 200")
-	}
-	return nil
-}
-
-func getResponseBody(response http.Response) (*Currency, error) {
-	BodyInBytes, err := io.ReadAll(response.Body)
+	var object Currency
+	resultObject, err := platform.GetResponseBody(&object, response)
 	if err != nil {
-		return &Currency{}, err
+		return nil, err
 	}
-	var currency Currency
-	json.Unmarshal(BodyInBytes, &currency)
-
-	return &currency, nil
+	return resultObject, nil
 }
