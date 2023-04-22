@@ -29,24 +29,10 @@ func (c *Currency) GetCurrency(currencySymbol string, user platform.User) (inter
 	if err != nil {
 		return nil, err
 	}
-
-	statusCode, err := platform.CheckResponseCode(response)
-	if err != nil {
-		if statusCode >= 400 && statusCode < 500 {
-			var object platform.FourHundredStatusCode
-			resultObject, err := platform.GetResponseBody(&object, response)
-			if err != nil {
-				return nil, err
-			}
-			return resultObject, nil
-		} else {
-			return nil, err
-		}
-	}
-	var object Currency
-	resultObject, err := platform.GetResponseBody(&object, response)
+	statusCode, _ := platform.CheckResponseCode(response)
+	object, err := platform.GetResponseBody(statusCode, &c, response)
 	if err != nil {
 		return nil, err
 	}
-	return resultObject, nil
+	return object, nil
 }

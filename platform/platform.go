@@ -37,7 +37,26 @@ func CheckResponseCode(response *http.Response) (int, error) {
 	return response.StatusCode, nil
 }
 
-func GetResponseBody(object interface{}, response *http.Response) (interface{}, error) {
+func GetResponseBody(statusCode int, expectedObject interface{}, response *http.Response) (interface{}, error) {
+	var resultObject interface{}
+	var err error
+
+	if statusCode == 200 {
+		resultObject, err = extractResponseBody(&expectedObject, response)
+	} else if statusCode >= 400 && statusCode < 500 {
+		var object FourHundredStatusCode
+		resultObject, err = extractResponseBody(&object, response)
+	} else {
+		err = fmt.Errorf("failed to communicate, ResponseStatusCode: %v", response.StatusCode)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	return resultObject, nil
+}
+
+func extractResponseBody(object interface{}, response *http.Response) (interface{}, error) {
 	BodyInBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return object, err
