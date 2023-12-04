@@ -1,7 +1,7 @@
 package platform
 
 import (
-	"fmt"
+	"net/http"
 	"net/url"
 )
 
@@ -9,17 +9,29 @@ import (
 // The function expects the URL path to construct the Simpleswap URL.
 //
 //	platform.GetRequest("/get_currency") // Example
-func (p Platform) GetRequest(urlPath string, queryParameters Params) {
+func (p Platform) GetRequest(urlPath string, queryParameters Params) (*http.Response, error) {
 
-	link := p.urlConstructor(urlPath, queryParameters)
-	// response, err := http.Get(link.String())
-	fmt.Println(link.String())
+	// Construct the query
+	link := p.getUrlConstructor(urlPath, queryParameters)
+
+	// Send http Get request
+	response, err := http.Get(link.String())
+
+	// Evaluate the errors
+	if err != nil {
+		return nil, err
+	}
+	// Returns the HTTP response in a successful attempt.
+	return response, nil
 }
 
-func (p Platform) urlConstructor(urlPath string, queryParameters Params) url.URL {
+// getUrlConstructor builds the Simpleswap URL up.
+// It expects urlPath as string and query parameters as Params struct.
+// It returns Simpleswap url in url.URL struct
+func (p Platform) getUrlConstructor(urlPath string, queryParameters Params) url.URL {
 
 	// Cosntruct the query parameters
-	values := p.queryConstructor(queryParameters)
+	values := p.getQueryConstructor(queryParameters)
 
 	// Construct the URL
 	constractedURL := url.URL{
@@ -32,9 +44,9 @@ func (p Platform) urlConstructor(urlPath string, queryParameters Params) url.URL
 	return constractedURL
 }
 
-// queryConstructor appends the query parameter to url.URL struct.
+// getQueryConstructor appends the query parameter to url.URL struct.
 // It exepcts Params struct.
-func (p Platform) queryConstructor(queryParameters Params) string {
+func (p Platform) getQueryConstructor(queryParameters Params) string {
 	v := url.Values{}
 	for _, param := range queryParameters.query {
 		v.Add(param.key, param.value)

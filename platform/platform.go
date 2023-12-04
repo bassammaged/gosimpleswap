@@ -6,7 +6,7 @@ package platform
 const URL string = "api.simpleswap.io"
 
 type Platform struct {
-	apiKey string
+	ApiKey string
 }
 
 // NewPlatform creates a new platform struct with assigned API key.
@@ -15,7 +15,7 @@ type Platform struct {
 func NewPlatform(apiKey string) (*Platform, error) {
 	// Create a new struct
 	p := &Platform{
-		apiKey: apiKey,
+		ApiKey: apiKey,
 	}
 
 	// Test the api Key
